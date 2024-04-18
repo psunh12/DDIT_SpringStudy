@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mapper.QuickMapper">
+
+	<insert id="createPost" parameterType="quickVO">
+		INSERT INTO QUICK(EMAIL_ADRES, PASSWORD, REGISTER_ID, REGIST_DT)
+		VALUES(#{emailAdres},#{password},#{registerId},SYSDATE)
+	</insert>
+
+	<insert id="insertQuickAttach" parameterType="quickAttachVO">
+		INSERT INTO QUICK_ATTACH(ITEM_ID, SEQ, PICTURE_URL, PICTURE_SIZE, PICTURE_TYPE, REG_DATE)
+		VALUES(#{itemId}, #{seq}, #{pictureUrl}, #{pictureSize}, #{pictureType}, SYSDATE)
+	</insert>
+	
+	<resultMap type="quickVO" id="quickMap">
+		<result property="emailAdres" column="EMAIL_ADRES"/>
+		<result property="password" column="PASSWORD"/>
+		<result property="registerId" column="REGISTER_ID"/>
+		<result property="registDt" column="REGIST_DT"/>
+		<result property="updaterId" column="UPDATER_ID"/>
+		<result property="updateDt" column="UPDATE_DT"/>
+		
+		<collection property="quickAttachVOList" resultMap="quickAttachMap"></collection>
+	</resultMap>
+	
+	<resultMap type="quickAttachVO" id="quickAttachMap">
+		<result property="itemId" column="ITEM_ID"/>
+		<result property="seq" column="SEQ"/>
+		<result property="pictureUrl" column="PICTURE_URL"/>
+		<result property="pictureSize" column="PICTURE_SIZE"/>
+		<result property="pictureType" column="PICTURE_TYPE"/>
+		<result property="regDate" column="REG_DATE"/>
+	</resultMap>
+	
+	<!-- 매퍼인터페이스의 메소드명이 매퍼xml의 id로 옴 -->
+	<select id="detail" parameterType="String" resultMap="quickMap">
+		SELECT A.EMAIL_ADRES, A.PASSWORD, A.REGISTER_ID, A.REGIST_DT, A.UPDATER_ID, A.UPDATE_DT
+		     , B.ITEM_ID, B.SEQ, B.PICTURE_URL, B.PICTURE_SIZE, B.PICTURE_TYPE, B.REG_DATE
+		FROM   QUICK A LEFT OUTER JOIN QUICK_ATTACH B ON(A.EMAIL_ADRES = B.ITEM_ID)
+		WHERE  A.EMAIL_ADRES = #{emailAdres}
+	</select>
+	
+	<!-- CardVO(no=1, validMonth=20240207, emailAdres=test@test.com)
+	INSERT ALL
+	into CARD (NO,VALID_MONTH,EMAIL_ADRES) values ('3','202402','test2@test.com') 
+	into CARD (NO,VALID_MONTH,EMAIL_ADRES) values ('4','202403','test2@test.com')
+	SELECT * FROM DUAL
+	
+	List<CardVO>
+	 -->
+	<update id="insertCard" parameterType="java.util.List" >
+		<foreach collection="list" item="cardVO"
+		open="INSERT ALL" close="SELECT * FROM DUAL" separator=" " index="idx">
+			INTO CARD(NO, VALID_MONTH, EMAIL_ADRES)
+			VALUES(#{cardVO.no},#{cardVO.validMonth},#{cardVO.emailAdres})
+		</foreach>
+	</update>
+	
+	<!-- LikesVO(likesCode=null, likesTitle=운동, likesCont=탁구, emailAdres=test@test.com) -->
+	<update id="insertLikes" parameterType="java.util.List">
+		<selectKey resultType="String" order="BEFORE" keyProperty="likesCode">
+			SELECT NVL(SUBSTR(MAX(LIKES_CODE),1,3) 
+    		|| TRIM(TO_CHAR(SUBSTR(MAX(LIKES_CODE),4)+1,'000')),'LKS001') FROM LIKES
+		</selectKey>
+	
+		<foreach collection="list" item="likesVO"
+			open="INSERT ALL" close="SELECT * FROM DUAL" separator=" "
+			index="idx">
+			INTO LIKES(LIKES_CODE, LIKES_TITLE, LIKES_CONT, EMAIL_ADRES)
+			VALUES(
+				 SUBSTR(#{likesCode},1,3)||(TRIM(TO_CHAR(SUBSTR(#{likesCode},4)+#{idx},'000')))
+				 , #{likesVO.likesTitle}
+				 , #{likesVO.likesCont}, #{likesVO.emailAdres})
+		</foreach>
+	</update>
+	
+	<update id="insertAllTest" parameterType="java.util.List" >
+		<foreach collection="list" item="card2VO"
+		open="INSERT ALL" close="SELECT * FROM DUAL" separator=" " index="idx">
+			INTO CARD2(NO, VALID_MONTH, EMAIL_ADRES)
+			VALUES(#{card2VO.no},#{card2VO.validMonth},#{card2VO.emailAdres})
+		</foreach>
+	</update>
+	
+	<update id="insertLikes2" parameterType="java.util.List" >
+		<foreach collection="list" item="likes2VO"
+		open="INSERT ALL" close="SELECT * FROM DUAL" separator=" " index="idx">
+			INTO LIKES2(LIKES_CODE, LIKES_TITLE, LIKES_CONT, EMAIL_ADRES)
+			VALUES(#{likes2VO.likesCode},#{likes2VO.likesTitle},
+				   #{likes2VO.likesCont},#{likes2VO.emailAdres})
+		</foreach>
+	</update>
+</mapper>
+
+

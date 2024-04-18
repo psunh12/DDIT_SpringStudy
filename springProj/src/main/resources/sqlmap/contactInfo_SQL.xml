@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mapper.ContactInfoMapper">
+
+	<!-- mapper인터페이스의 메소드명과 mapper xml의 id는 동일함
+	 ContactInfoVO(ciCd=null, ciName=개똥이, ciMail=test@test.com, ciSubj=취업상담, 
+	 	ciImgUrl=/2024/02/06/asdflk_개똥이.jpg, ciMesg=<figure class="image"><img src="http://localhost/resources/upload/b5cde164-ba71-434f-bcf4-8afd3e58fee9.jpg"></figure>, 
+	 	ciRegDt=Sat Feb 17 00:00:00 KST 2024, registerId=null, registDt=null, 
+	 	uploadFile=org.springframework.web.multipart.support.StandardMultipartHttpServletRequest$StandardMultipartFile@42bed612)
+	-->
+	<insert id="createPost" parameterType="contactInfoVO">
+		<selectKey resultType="String" order="BEFORE" keyProperty="ciCd">
+			SELECT NVL(SUBSTR(MAX(CI_CD),1,10)
+			     || TRIM(TO_CHAR(SUBSTR(MAX(CI_CD),-3)+1,'000')),
+			        'CI' || TO_CHAR(SYSDATE,'YYYYMMDD') || '001')
+			FROM   CONTACT_INFO
+			WHERE  CI_CD LIKE 'CI' || TO_CHAR(SYSDATE,'YYYYMMDD') || '%'
+		</selectKey>
+	
+		INSERT INTO CONTACT_INFO(CI_CD, CI_NAME, CI_MAIL, CI_SUBJ, CI_IMG_URL
+					, CI_MESG, CI_REG_DT, REGISTER_ID, REGIST_DT)
+		VALUES(#{ciCd}, #{ciName}, #{ciMail}, #{ciSubj}, #{ciImgUrl}
+					, #{ciMesg}, #{ciRegDt}, 'admin', SYSDATE)
+	</insert>
+
+	<resultMap type="contactInfoVO" id="contactInfoMap">
+		<result property="ciCd" column="CI_CD"/>
+		<result property="ciName" column="CI_NAME"/>
+		<result property="ciMail" column="CI_MAIL"/>
+		<result property="ciSubj" column="CI_SUBJ"/>
+		<result property="ciImgUrl" column="CI_IMG_URL"/>
+		<result property="ciMesg" column="CI_MESG" jdbcType="CLOB" javaType="java.lang.String" />
+		<result property="ciRegDt" column="CI_REG_DT"/>
+		<result property="registerId" column="REGISTER_ID"/>
+		<result property="registDt" column="REGIST_DT"/>
+	</resultMap>
+
+	<!-- 방문 상세
+	방문 정보 상세(ciCd=CI20240206001)
+	 -->
+	<select id="detail" parameterType="String" resultMap="contactInfoMap">
+		SELECT CI_CD, CI_NAME, CI_MAIL, CI_SUBJ, CI_IMG_URL
+			 , CI_MESG, CI_REG_DT, REGISTER_ID, REGIST_DT
+		FROM   CONTACT_INFO
+		WHERE  CI_CD = #{ciCd}
+	</select>
+</mapper>
+
+
+

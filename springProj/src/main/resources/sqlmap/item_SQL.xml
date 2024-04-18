@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mapper.ItemMapper">
+	
+	<!-- public int registerPost(ItemVO itemVO) 
+	들어옴 : ItemVO[itemId=0,itemName=삼성태블릿,price=120000,description=쓸만함
+		     pictureUrl=/2024/01/30/dsfak_개똥이.jpg,uploadFile=파일객체]
+	나감   : ItemVO[itemId=1,itemName=삼성태블릿,price=120000,description=쓸만함
+		     pictureUrl=/2024/01/30/dsfak_개똥이.jpg,uploadFile=]
+	-->
+	<insert id="registerPost" parameterType="itemVO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="itemId">
+			SELECT NVL(MAX(ITEM_ID),0) + 1 FROM ITEM
+		</selectKey>
+	
+		INSERT INTO ITEM(ITEM_ID, ITEM_NAME, PRICE, DESCRIPTION, PICTURE_URL)
+		VALUES(#{itemId}, #{itemName}, #{price}, #{description}, #{pictureUrl})
+	</insert>
+	
+	<!-- 
+	Item2VO(itemId=0, itemName=삼성태블릿, price=120000, description=쓸만함
+	, pictureUrl=웹경로, pictureUrl2=웹경로
+	, uploadFile=파일객체, uploadFile2=파일객체)
+	 -->
+	<insert id="registerPost2" parameterType="item2VO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="itemId">
+			SELECT NVL(MAX(ITEM_ID),0)+1 FROM ITEM2
+		</selectKey>
+	
+		INSERT INTO ITEM2(ITEM_ID, ITEM_NAME, PRICE, DESCRIPTION, PICTURE_URL, PICTURE_URL2)
+		VALUES(#{itemId}, #{itemName}, #{price}, #{description}, #{pictureUrl}, #{pictureUrl2})
+	</insert>
+	
+	<!-- 
+	Item3VO(itemId=0, itemName=삼성태블릿, price=120000, description=쓸만함, 
+			uploadFile=[파일객체1, 파일객체2, 파일객체3], attachVOList=null)
+	-->
+	<insert id="registerPost3" parameterType="item3VO">
+		<selectKey resultType="int" order="BEFORE" keyProperty="itemId">
+			SELECT NVL(MAX(ITEM_ID),0)+1 FROM ITEM3
+		</selectKey>
+	
+		INSERT INTO ITEM3(ITEM_ID, ITEM_NAME, PRICE, DESCRIPTION)
+		VALUES(#{itemId}, #{itemName}, #{price}, #{description})
+	</insert>
+	
+	<!-- 
+	AttachVO[itemId=1,seq=1,pictureUrl=웹경로,pictureSize=123443
+			,pictureType=image/jpeg,regDate=null]
+	-->
+	<insert id="insertAttach" parameterType="attachVO">
+		INSERT INTO ATTACH(ITEM_ID, SEQ, PICTURE_URL, PICTURE_SIZE, PICTURE_TYPE, REG_DATE)
+		VALUES(#{itemId},#{seq},#{pictureUrl},#{pictureSize},#{pictureType},SYSDATE)
+	</insert>
+	
+	<resultMap type="item3VO" id="item3Map">
+		<result property="itemId" column="ITEM_ID" />
+		<result property="itemName" column="ITEM_NAME" />
+		<result property="price" column="PRICE" />
+		<result property="description" column="DESCRIPTION" />
+		
+		<collection property="attachVOList" resultMap="attachMap"></collection>
+	</resultMap>
+	
+	<resultMap type="attachVO" id="attachMap">
+		<result property="seq" column="SEQ" />
+		<result property="pictureUrl" column="PICTURE_URL" />
+		<result property="pictureSize" column="PICTURE_SIZE" />
+		<result property="pictureType" column="PICTURE_TYPE" />
+		<result property="regDate" column="REG_DATE" />
+	</resultMap>
+	
+	<select id="detail3" parameterType="int" resultMap="item3Map">
+		SELECT A.ITEM_ID, A.ITEM_NAME, A.PRICE, A.DESCRIPTION
+		      ,B.SEQ, B.PICTURE_URL, B.PICTURE_SIZE, B.PICTURE_TYPE, B.REG_DATE 
+		FROM   ITEM3 A LEFT OUTER JOIN ATTACH B ON(A.ITEM_ID = B.ITEM_ID)
+		WHERE  A.ITEM_ID = #{itemId}
+	</select>
+</mapper>
+
+
+
+
+

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lprod">
+	<!-- map{"keyword":"","currentPage":1} -->
+	<sql id="where">
+		<if test="keyword!=null and keyword!=''">
+		AND    (
+				LPROD_GU LIKE '%' || #{keyword} || '%'
+			OR  LPROD_NM LIKE '%' || #{keyword} || '%'
+		)
+		</if>
+	</sql>
+	
+	<!-- map{"keyword":"","currentPage":1} -->
+	<select id="list" parameterType="hashMap" resultType="lprodVO">
+		WITH T AS(
+		    SELECT ROW_NUMBER() OVER (ORDER BY F.LPROD_ID DESC) RNUM
+		          , F.*
+		    FROM (
+		        SELECT LPROD_ID, LPROD_GU, LPROD_NM
+		        FROM   LPROD
+		        WHERE  1 = 1
+				<include refid="where"></include>
+		    ) F
+		)
+		SELECT T.*
+		FROM   T
+		WHERE  T.RNUM BETWEEN (#{currentPage}*10) - (10-1) AND (#{currentPage}*10)
+	</select>
+	
+	<!-- LprodVO[lprodId=2,lprodGu=null,lprodNm=null] -->
+	<select id="listOne" parameterType="lprodVO" resultType="lprodVO">
+		SELECT LPROD_ID, LPROD_GU, LPROD_NM
+		FROM   LPROD
+		WHERE  LPROD_ID = #{lprodId}
+	</select>
+	
+	<!-- [lprodId=36,lprodGu=TT092,lprodNm=트리거 테스트 2] -->
+	<update id="updateOne" parameterType="lprodVO">
+		UPDATE LPROD
+		SET    LPROD_GU=#{lprodGu}, LPROD_NM=#{lprodNm}
+		WHERE  LPROD_ID = #{lprodId}
+	</update>
+
+	<!-- [lprodId=36,lprodGu=null,lprodNm=null] -->
+	<delete id="deleteOne" parameterType="lprodVO">
+		DELETE FROM LPROD
+		WHERE  LPROD_ID = #{lprodId}
+	</delete>	
+	
+	<!-- {"lprodId":"802","lprodGu":"S802","lprodNm":"상품분류명802"} 
+		 {"lprodId":"802","lprodGu":"T802","lprodNm":"상품분류명T802"}
+	-->
+	<update id="insertOne" parameterType="lprodVO">
+		MERGE INTO LPROD A
+		USING DUAL ON(A.LPROD_ID = #{lprodId})
+		WHEN MATCHED THEN
+		    UPDATE
+		    SET A.LPROD_GU = #{lprodGu}
+		      , A.LPROD_NM = #{lprodNm}
+		WHEN NOT MATCHED THEN
+		    INSERT (LPROD_ID, LPROD_GU, LPROD_NM)
+		    VALUES(#{lprodId},#{lprodGu},#{lprodNm})
+	</update>
+	
+	<!-- 전체 글 수 
+	map{"keyword":"S7","currentPage":1}
+	-->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*) FROM LPROD
+		WHERE 1 = 1
+		<include refid="where"></include>
+	</select>
+	
+	<select id="getMaxLprodId" resultType="int">
+		SELECT MAX(LPROD_ID) FROM LPROD
+	</select>
+</mapper>
+
+
+

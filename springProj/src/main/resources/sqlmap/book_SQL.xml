@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="book">
+	<!-- MyBatis에서 제공해주는 데이터 입력을 나타내는 태그
+	1) 드루와 : Dao 객체가 던진 데이터타입.parameterType만 씀
+	2) 가즈아 : Dao 객체의 메소드 쪽으로 리턴할 타입.
+	  - resultType : vo, hashMap, String, int
+	  - resultMap  : MyBatis의 resultMap 태그를 사용
+	-->
+	<!-- bookVO(전)=>{"bookId":0,"title":"총알탄 개똥이","category":"소설","price":10000,"insertDate":""} -->
+	<!-- bookVO(후)=>{"bookId":1,"title":"총알탄 개똥이","category":"소설","price":10000,"insertDate":""} -->
+	<!-- 마이바티스 쿼리 XML에 전달되면 샵{title}을 "총알탄 개똥이"로 자동 변환함 -->
+	<insert id="insert" parameterType="bookVO">
+		<!-- 니키? 내키? 아니! 우리키!! -->
+		<!-- 키를 높이면 락(rok)커가 될 수 있을까? 
+		order : BEFORE(쿼리를 실행하기 전에 먼저 selectKey를 실행)
+		resultType : selectKey 쿼리를 실행 한 타입
+		keyProperty : bookVO의 멤버변수(결과를 담을)
+		-->
+		<selectKey resultType="int" order="BEFORE" keyProperty="bookId">
+			SELECT NVL(MAX(BOOK_ID),0)+1 FROM BOOK
+		</selectKey>
+		INSERT INTO BOOK(BOOK_ID, TITLE, CATEGORY, PRICE, INSERT_DATE)
+		VALUES(#{bookId},#{title},#{category},#{price},SYSDATE)
+	</insert>
+	
+	<!-- .selectOne("book.detail",bookVO); -->
+	<!-- 책 상세보기 
+		select 태그는 조회(select) 쿼리를 실행하기 위한 mybatis 태그.
+		parameterType(book_SQL.xml로 드루와) : bookVO 타입
+		resultType(BookDAO로 가즈아) : bookVO 타입
+	-->
+	<!-- bookVO(드루와)=>{"bookId":"3","title":"","category":"","price":0,"insertDate":""} -->
+	<!-- bookVO(가즈아)=>{"bookId":"3","title":"총알탄 개똥이","category":"소설","price":10000,"insertDate":"22/07/19"} -->
+	<select id="detail" parameterType="bookVO" resultType="bookVO">
+		SELECT BOOK_ID, TITLE, CATEGORY, PRICE, INSERT_DATE
+		FROM   BOOK
+		WHERE  BOOK_ID = #{bookId}
+	</select>
+	
+	<!-- 책 수정하기. update태그는 update 쿼리를 실행하기 위한 마이바티스 태그 
+	bookVO{bookId=3,title=김정민과 박선혜의 콜라보, category=음악, price=1200000}
+	insert, update, delete의 경우 resultType 또는 resultMap은 생략
+	-->
+	<update id="updatePost" parameterType="bookVO">
+		UPDATE BOOK 
+		SET    TITLE=#{title}, CATEGORY=#{category}, PRICE=#{price}
+		WHERE  BOOK_ID = #{bookId}
+	</update>
+	
+	<!-- 책 삭제하기. delete태그는 delete 쿼리를 실행하기 위한 마이바티스 태그 
+	bookVO{bookId=3,title=김정민과 박선혜의 콜라보, category=음악, price=1200000}
+	insert, update, delete의 경우 resultType 또는 resultMap은 생략
+	-->
+	<delete id="deletePost" parameterType="bookVO">
+		DELETE FROM BOOK 
+		WHERE  BOOK_ID = #{bookId}
+	</delete>
+	
+	<!-- 책 목록
+	P.102
+	where 1 = 1은 늘 참임. 
+	조건이 2개 이상일 때 WHERE + AND
+	조건이 1개일 때 WHERE이어야 함. 
+		WHERE(생략) 
+		AND   => 오류 발생
+		==>
+		WHERE 1 = 1
+		AND(생략)
+		AND => 정상
+		
+		True and True  = True
+		True and False = False
+		
+		keyword : null(/list)
+		keyword : ""  (/list?keyword=)
+	-->
+	<select id="list" parameterType="String" resultType="bookVO">
+		SELECT BOOK_ID, TITLE, CATEGORY, PRICE, INSERT_DATE
+		FROM   BOOK
+		WHERE  1 = 1
+		<if test="keyword!=null and keyword!=''">
+		AND (
+		    TITLE LIKE '%' || #{keyword} || '%'
+		    OR     CATEGORY LIKE '%' || #{keyword} || '%'
+		    OR     PRICE LIKE  '%' || #{keyword} || '%'
+		)
+		</if>
+		ORDER BY BOOK_ID DESC
+	</select>
+</mapper>
+
+
+
+
+

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.mapper.StudMapper">
+	<sql id="where">
+		<if test="keyword!=null and keyword!=''">
+			AND (
+					STUD_ID LIKE '%' || #{keyword} || '%'
+				OR	STUD_NM LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	<!-- {studId=a001,studNm=개똥이,studPw=asdfadsfdsaffdsa,studDet=학생상세내용
+		,gender=여성,nationality=korea,postNum=12345,studAddress=대전 중구
+		,studAddress2=123-33} -->
+	<insert id="createRegister" parameterType="studVO">
+		INSERT INTO STUD(STUD_ID, STUD_NM, STUD_PW
+		<if test="studDet!=null and studDet!=''">
+		, STUD_DET
+		</if>
+		<if test="gender!=null and gender!=''">
+		, GENDER
+		</if>
+		<if test="nationality!=null and nationality!=''">
+		, NATIONALITY
+		</if>
+		<if test="postNum!=null and postNum!=''">
+		, POST_NUM
+		</if>
+		<if test="studAddress!=null and studAddress!=''">
+		, STUD_ADDRESS
+		</if>
+		<if test="studAddress2!=null and studAddress2!=''">
+		, STUD_ADDRESS2
+		</if>
+		)
+		VALUES(#{studId},#{studNm},#{studPw}
+		<if test="studDet!=null and studDet!=''">
+		,#{studDet}
+		</if>
+		<if test="gender!=null and gender!=''">
+		,#{gender}
+		</if>
+		<if test="nationality!=null and nationality!=''">
+		,#{nationality}
+		</if>
+		<if test="postNum!=null and postNum!=''">
+		,#{postNum}
+		</if>
+		<if test="studAddress!=null and studAddress!=''">
+		,#{studAddress}
+		</if>
+		<if test="studAddress2!=null and studAddress2!=''">
+		,#{studAddress2}
+		</if>
+		)
+	</insert>
+
+	<resultMap type="studVO" id="studMap">
+		<result property="studId"  column="STUD_ID" />  
+		<result property="studNm"  column="STUD_NM" />  
+		<result property="studPw"  column="STUD_PW" />  
+		<result property="enabled" column="ENABLED" />  
+		<result property="studDet" column="STUD_DET" jdbcType="CLOB" javaType="java.lang.String" />
+		<result property="gender" column="GENDER"/>
+		<result property="nationality" column="NATIONALITY"/>
+		<result property="postNum" column="POST_NUM"/>
+		<result property="studAddress" column="STUD_ADDRESS"/>
+		<result property="studAddress2" column="STUD_ADDRESS2"/>
+		<collection property="studAuthVOList" resultMap="studAuthMap"></collection>
+	</resultMap>
+	
+	<resultMap type="studAuthVO" id="studAuthMap">
+		<result property="studId" column="STUD_ID" />
+		<result property="auth" column="AUTH" />
+	</resultMap>
+
+	<!-- 학생 상세 -->
+	<select id="detail" parameterType="String" resultMap="studMap">
+		SELECT A.STUD_ID, A.STUD_NM, A.STUD_PW, A.ENABLED
+			 , A.STUD_DET, A.GENDER, A.NATIONALITY, A.POST_NUM, A.STUD_ADDRESS, A.STUD_ADDRESS2
+		      , B.AUTH
+		FROM   STUD A, STUD_AUTH B
+		WHERE  A.STUD_ID = B.STUD_ID
+		AND    A.ENABLED = '1'
+		AND    A.STUD_ID = #{username}
+	</select>
+	
+	<!-- 학생 수정
+	{studId=a001,studNm=개똥이2,studPw=java2}
+	 -->
+	<update id="createModify" parameterType="studVO">
+		UPDATE STUD
+		SET    STUD_NM = #{studNm}
+		     , STUD_PW = #{studPw}
+		WHERE  STUD_ID = #{studId}
+	</update>	
+	
+	<!-- 학생 삭제 -->
+	<delete id="createDelete" parameterType="String">
+		DELETE FROM STUD
+		WHERE  STUD_ID = #{studId}
+	</delete>
+	
+	<!-- 학생 목록 
+	map : null 또는 map : {"keyword":"","currentPage":1} 
+			      또는 map : {"keyword":"신용","currentPage":3}
+	
+	휴..낮엔더워 => () > NOT > AND > OR
+	-->
+	<select id="list" parameterType="hashMap" resultType="studVO">
+		WITH T AS(
+		    SELECT ROW_NUMBER() OVER(ORDER BY STUD_ID ASC) RNUM
+		          , STUD_ID, STUD_NM, STUD_PW, ENABLED 
+		    FROM   STUD
+		    WHERE  1 = 1
+		    <include refid="where"></include>
+		)
+		SELECT T.* FROM T
+		WHERE  T.RNUM BETWEEN (#{currentPage}*10) - (10 - 1) AND (#{currentPage}*10)
+	</select>
+	
+	<!-- HOBBY 테이블에 insert 
+	hobbyVO[studId=a005,hobby=sports]
+	-->
+	<insert id="insertHobby" parameterType="hobbyVO">
+		INSERT INTO HOBBY(STUD_ID, HOBBY)
+		VALUES(#{studId},#{hobby})
+	</insert>
+	
+	<!-- map : {"keyword":"신용","currentPage":3} -->
+	<select id="getTotal" parameterType="hashMap" resultType="int">
+		SELECT COUNT(*) FROM STUD
+		WHERE  1 = 1
+		<include refid="where"></include>
+	</select>
+</mapper>
+
+
